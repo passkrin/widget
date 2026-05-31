@@ -83,8 +83,8 @@
                 }
                 
                 const getVal = (rowIndex) => {
-                    if (rows[rowIndex] && rows[rowIndex]) {
-                        return rows[rowIndex].replace(/^"|"$/g, '').trim();
+                    if (rows[rowIndex] && rows[rowIndex][1]) {
+                        return rows[rowIndex][1].replace(/^"|"$/g, '').trim();
                     }
                     return '';
                 };
