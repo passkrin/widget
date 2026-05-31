@@ -61,31 +61,32 @@
 
     <script>
         const SHEET_ID = '1mC0Qhx5Qw9gU1A8sxq2v7D9G5s1mgpM41KMEcbj3Zq8'; 
-        const GOOGLE_URL = `https://google.com{SHEET_ID}/export?format=csv`;
-        const PROXY_URL = `https://allorigins.win{encodeURIComponent(GOOGLE_URL)}`;
+        // Запрос через gviz отдается серверами Google в чистом виде напрямую
+        const URL = `https://google.com{SHEET_ID}/gviz/tq?tqx=out:json`;
 
         async function updateWidget() {
             try {
-                const response = await fetch(`${PROXY_URL}&nocache=${new Date().getTime()}`);
+                const response = await fetch(`${URL}&nocache=${new Date().getTime()}`);
                 if (!response.ok) throw new Error();
                 
-                const wrapper = await response.json();
-                const text = wrapper.contents; 
+                const text = await response.text();
                 
-                const lines = text.split('\n');
-                const rows = [];
+                // Очищаем ответ Google от технической обертки
+                const startIdx = text.indexOf('{');
+                const endIdx = text.lastIndexOf('}') + 1;
+                const jsonText = text.substring(startIdx, endIdx);
+                const data = JSON.parse(jsonText);
                 
-                for (let i = 0; i < lines.length; i++) {
-                    let line = lines[i].replace('\r', '').trim();
-                    if (!line) continue;
-                    let cells = line.includes(';') ? line.split(';') : line.split(',');
-                    rows.push(cells);
-                }
-                
+                const rows = data.table.rows;
+
                 const getVal = (rowIndex) => {
-                    if (rows[rowIndex] && rows[rowIndex][1]) {
-                        return rows[rowIndex][1].replace(/^"|"$/g, '').trim();
-                    }
+                    try {
+                        if (rows[rowIndex] && rows[rowIndex].c && rows[rowIndex].c) {
+                            const cell = rows[rowIndex].c;
+                            if (cell.f !== null && cell.f !== undefined) return String(cell.f).trim();
+                            if (cell.v !== null && cell.v !== undefined) return String(cell.v).trim();
+                        }
+                    } catch (e) {}
                     return '';
                 };
 
@@ -111,6 +112,7 @@
             }
         }
 
+        // Обновление каждые 5 секунд
         setInterval(updateWidget, 5000);
         updateWidget();
     </script>
