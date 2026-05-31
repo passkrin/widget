@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            background-color: transparent;
+            margin: 0;
+            padding: 20px;
+            font-family: 'Arial Black', 'Impact', sans-serif;
+            color: #ffffff;
+            overflow: hidden;
+        }
+        .widget-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 380px;
+            background-color: #0b0c10;
+            border: 3px solid #e63946; 
+            border-radius: 16px;
+            padding: 12px;
+            box-sizing: border-box;
+            height: auto;
+        }
+        .row { display: flex; gap: 8px; }
+        .header-row .block { flex: 1; }
+        .block { background-color: #1f2833; border-radius: 10px; padding: 10px 14px; }
+        .label { font-size: 10px; color: #8b9bb4; letter-spacing: 1px; margin-bottom: 4px; text-transform: uppercase; }
+        .value { font-size: 22px; font-weight: 900; }
+        .b-row .block { width: 100%; }
+        .sub-val { font-size: 16px; font-family: sans-serif; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="widget-panel" id="widget">
+        <div class="row header-row">
+            <div class="block">
+                <div class="label">СТАРТ</div>
+                <div class="value" id="start-val">0</div>
+            </div>
+            <div class="block">
+                <div class="label">БАЛАНС</div>
+                <div class="value" id="balance-val">0</div>
+            </div>
+        </div>
+        <div class="row b-row" id="bet1-block">
+            <div class="block">
+                <div class="label">СТАВКА</div>
+                <div class="value sub-val" id="bet1-val">Загрузка...</div>
+            </div>
+        </div>
+        <div class="row b-row" id="bet2-block">
+            <div class="block">
+                <div class="label">ВТОРАЯ СТАВКА</div>
+                <div class="value sub-val" id="bet2-val"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SHEET_ID = '1mC0Qhx5Qw9gU1A8sxq2v7D9G5s1mgpM41KMEcbj3Zq8'; 
+        const GOOGLE_URL = `https://google.com{SHEET_ID}/export?format=csv`;
+        const PROXY_URL = `https://allorigins.win{encodeURIComponent(GOOGLE_URL)}`;
+
+        async function updateWidget() {
+            try {
+                const response = await fetch(`${PROXY_URL}&nocache=${new Date().getTime()}`);
+                if (!response.ok) throw new Error();
+                
+                const wrapper = await response.json();
+                const text = wrapper.contents; 
+                
+                const lines = text.split('\n');
+                const rows = [];
+                
+                for (let i = 0; i < lines.length; i++) {
+                    let line = lines[i].replace('\r', '').trim();
+                    if (!line) continue;
+                    let cells = line.includes(';') ? line.split(';') : line.split(',');
+                    rows.push(cells);
+                }
+                
+                const getVal = (rowIndex) => {
+                    if (rows[rowIndex] && rows[rowIndex]) {
+                        return rows[rowIndex].replace(/^"|"$/g, '').trim();
+                    }
+                    return '';
+                };
+
+                const start = getVal(0) || '0';
+                const balance = getVal(1) || '0';
+                const bet1 = getVal(2) || '';
+                const bet2 = getVal(3) || '';
+
+                document.getElementById('start-val').innerText = start;
+                document.getElementById('balance-val').innerText = balance;
+                document.getElementById('bet1-val').innerText = bet1 || 'Нет ставки';
+
+                const bet2Block = document.getElementById('bet2-block');
+                if (bet2 && bet2.length > 0) {
+                    document.getElementById('bet2-val').innerText = bet2;
+                    bet2Block.style.display = 'flex';
+                } else {
+                    bet2Block.style.display = 'none';
+                }
+
+            } catch (error) {
+                console.log('Ошибка получения данных');
+            }
+        }
+
+        setInterval(updateWidget, 5000);
+        updateWidget();
+    </script>
+</body>
+</html>
