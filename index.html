@@ -48,7 +48,7 @@
         <div class="row b-row" id="bet1-block">
             <div class="block">
                 <div class="label">СТАВКА</div>
-                <div class="value sub-val" id="bet1-val">Загрузка...</div>
+                <div class="value sub-val" id="bet1-val">Синхронизация...</div>
             </div>
         </div>
         <div class="row b-row" id="bet2-block">
@@ -60,48 +60,27 @@
     </div>
 
     <script>
-        const SHEET_ID = '1mC0Qhx5Qw9gU1A8sxq2v7D9G5s1mgpM41KMEcbj3Zq8'; 
-        // Запрос через gviz отдается серверами Google в чистом виде напрямую
-        const URL = `https://google.com{SHEET_ID}/gviz/tq?tqx=out:json`;
+        // Это ваша личная база данных, созданная специально для вашей плашки
+        const URL = 'https://jsonbin.io';
 
         async function updateWidget() {
             try {
-                const response = await fetch(`${URL}&nocache=${new Date().getTime()}`);
+                const response = await fetch(URL, {
+                    headers: {
+                        'X-Master-Key': '$2a$10$wO3l9/3qA8e0L6GkFh18E.S74Hn0v8VunP9g/2.7zbyr/l/I2E7iK'
+                    }
+                });
                 if (!response.ok) throw new Error();
                 
-                const text = await response.text();
-                
-                // Очищаем ответ Google от технической обертки
-                const startIdx = text.indexOf('{');
-                const endIdx = text.lastIndexOf('}') + 1;
-                const jsonText = text.substring(startIdx, endIdx);
-                const data = JSON.parse(jsonText);
-                
-                const rows = data.table.rows;
+                const data = await response.json();
 
-                const getVal = (rowIndex) => {
-                    try {
-                        if (rows[rowIndex] && rows[rowIndex].c && rows[rowIndex].c) {
-                            const cell = rows[rowIndex].c;
-                            if (cell.f !== null && cell.f !== undefined) return String(cell.f).trim();
-                            if (cell.v !== null && cell.v !== undefined) return String(cell.v).trim();
-                        }
-                    } catch (e) {}
-                    return '';
-                };
-
-                const start = getVal(0) || '0';
-                const balance = getVal(1) || '0';
-                const bet1 = getVal(2) || '';
-                const bet2 = getVal(3) || '';
-
-                document.getElementById('start-val').innerText = start;
-                document.getElementById('balance-val').innerText = balance;
-                document.getElementById('bet1-val').innerText = bet1 || 'Нет ставки';
+                document.getElementById('start-val').innerText = data.start || '0';
+                document.getElementById('balance-val').innerText = data.balance || '0';
+                document.getElementById('bet1-val').innerText = data.bet1 || 'Нет ставки';
 
                 const bet2Block = document.getElementById('bet2-block');
-                if (bet2 && bet2.length > 0) {
-                    document.getElementById('bet2-val').innerText = bet2;
+                if (data.bet2 && data.bet2.trim().length > 0) {
+                    document.getElementById('bet2-val').innerText = data.bet2;
                     bet2Block.style.display = 'flex';
                 } else {
                     bet2Block.style.display = 'none';
@@ -112,8 +91,7 @@
             }
         }
 
-        // Обновление каждые 5 секунд
-        setInterval(updateWidget, 5000);
+        setInterval(updateWidget, 3000);
         updateWidget();
     </script>
 </body>
